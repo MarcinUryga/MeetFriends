@@ -3,7 +3,6 @@ package com.example.marcin.meetfriends.di
 import com.example.marcin.meetfriends.MeetFriendsApplication
 import dagger.Component
 import dagger.android.AndroidInjector
-import dagger.android.HasActivityInjector
 import dagger.android.support.AndroidSupportInjectionModule
 import javax.inject.Singleton
 
