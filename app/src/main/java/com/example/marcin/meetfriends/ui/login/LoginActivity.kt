@@ -1,7 +1,13 @@
 package com.example.marcin.meetfriends.ui.login
 
-/**
- * Created by marci on 2017-11-09.
- */
-class LoginActivity {
+import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
+import com.example.marcin.meetfriends.R
+
+class LoginActivity : AppCompatActivity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.activity_login)
+  }
 }
