@@ -2,18 +2,24 @@ package com.example.marcin.meetfriends.ui.login
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
+import com.beltaief.reactivefb.ReactiveFB
+import com.beltaief.reactivefb.SimpleFacebookConfiguration
+import com.beltaief.reactivefb.actions.ReactiveLogin
+import com.beltaief.reactivefb.util.PermissionHelper
 import com.example.marcin.meetfriends.R
 import com.example.marcin.meetfriends.mvp.BaseActivity
 import com.example.marcin.meetfriends.ui.main.MainActivity
 import com.facebook.AccessToken
-import com.facebook.CallbackManager
-import com.facebook.FacebookCallback
-import com.facebook.FacebookException
-import com.facebook.login.LoginResult
+import com.facebook.login.DefaultAudience
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import dagger.android.AndroidInjection
+import durdinapps.rxfirebase2.RxFirebaseAuth
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_login.*
 import timber.log.Timber
 
@@ -21,7 +27,7 @@ import timber.log.Timber
 class LoginActivity : BaseActivity<LoginContract.Presenter>(), LoginContract.View {
 
   private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-  private val callbackManager: CallbackManager = CallbackManager.Factory.create()
+  private val disposables = CompositeDisposable()
 
   public override fun onStart() {
     super.onStart()
@@ -35,30 +41,28 @@ class LoginActivity : BaseActivity<LoginContract.Presenter>(), LoginContract.Vie
   public override fun onCreate(savedInstanceState: Bundle?) {
     AndroidInjection.inject(this)
     super.onCreate(savedInstanceState)
+
+
+    // init lib
     setContentView(R.layout.activity_login)
-    loginButton.setReadPermissions("email", "public_profile")
-    loginButton.registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
-      override fun onSuccess(loginResult: LoginResult) {
-        Timber.d("facebook:onSuccess: $loginResult")
-        handleFacebookAccessToken(loginResult.accessToken)
-      }
 
-      override fun onCancel() {
-        Timber.d("facebook:onCancel")
-        // ...
-      }
+    registerlogin()
+  }
 
-      override fun onError(error: FacebookException) {
-        Timber.e("facebook:onError $error")
-        // ...
-      }
-    })
+  private fun registerlogin() {
+    val disposableObserver = ReactiveLogin.loginWithButton(loginButton)
+        .subscribe({ loginResult ->
+          handleFacebookAccessToken(loginResult.accessToken)
+        }, { error ->
+          Timber.e(error.localizedMessage)
+        })
+    disposables.add(disposableObserver)
   }
 
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
     super.onActivityResult(requestCode, resultCode, data)
     // Pass the activity result back to the Facebook SDK
-    callbackManager.onActivityResult(requestCode, resultCode, data)
+    ReactiveLogin.onActivityResult(requestCode, resultCode, data);
   }
 
   private fun handleFacebookAccessToken(token: AccessToken) {
@@ -66,27 +70,30 @@ class LoginActivity : BaseActivity<LoginContract.Presenter>(), LoginContract.Vie
 
     val credential = FacebookAuthProvider.getCredential(token.token)
 
-    auth.signInWithCredential(credential)
-        .addOnCompleteListener(this) { task ->
-          if (task.isSuccessful) {
-            // Sign in success, update UI with the signed-in user's information
-            Timber.d("signInWithCredential:success")
-            val user = auth.currentUser
-            Toast.makeText(this@LoginActivity, user?.email,
-                Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
-          } else {
-            // If sign in fails, display a message to the user.
-            Timber.e("signInWithCredential:failure ${task.exception}")
-            Toast.makeText(this@LoginActivity, "Authentication failed.",
-                Toast.LENGTH_SHORT).show()
-//            updateUI(null)
-          }
-
-          // ...
+    RxFirebaseAuth.signInWithCredential(auth, credential)
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .doOnSubscribe {
+          progressBar.visibility = View.VISIBLE
         }
+        .subscribe({ result ->
+          Timber.d("signInWithCredential:success")
+          val user = auth.currentUser
+          Toast.makeText(this@LoginActivity, user?.email,
+              Toast.LENGTH_SHORT).show()
+          startActivity(Intent(this, MainActivity::class.java))
+          finish()
+        }, { error ->
+          progressBar.visibility = View.INVISIBLE
+          // If sign in fails, display a message to the user.
+          Timber.e("signInWithCredential:failure ${error.localizedMessage}")
+          Toast.makeText(this@LoginActivity, "Authentication failed.",
+              Toast.LENGTH_SHORT).show()
+        })
   }
 
-
+  override fun onDestroy() {
+    super.onDestroy()
+    disposables.clear()
+  }
 }

@@ -11,6 +11,7 @@ android {
         applicationId "com.example.marcin.meetfriends"
         minSdkVersion 19
         targetSdkVersion 26
+        multiDexEnabled true
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -33,12 +34,16 @@ dependencies {
     // dagger
     implementation "com.google.dagger:dagger-android:$dagger_version"
     implementation "com.google.dagger:dagger-android-support:$dagger_version"
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     kapt "com.google.dagger:dagger-android-processor:$dagger_version"
     kapt "com.google.dagger:dagger-compiler:$dagger_version"
     //facebook
-    implementation "com.facebook.android:facebook-login:$facebook_version"
+//    implementation "com.facebook.android:facebook-login:$facebook_version"
     //firebase
     implementation "com.google.firebase:firebase-auth:$firebase_version"
+    implementation "com.github.frangsierra:rx2firebase:$rx_firebase_version"
+    //rxjava
+    implementation "com.beltaief.reactivefb:reactivefb:$reactivefb_version"
     //timber
     implementation "com.jakewharton.timber:timber:$timber_version"
     //tests

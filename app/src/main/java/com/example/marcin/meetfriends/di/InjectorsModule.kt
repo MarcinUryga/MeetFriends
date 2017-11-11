@@ -1,5 +1,7 @@
 package com.example.marcin.meetfriends.di
 
+import com.example.marcin.meetfriends.ui.launch.LaunchActivity
+import com.example.marcin.meetfriends.ui.launch.LaunchModule
 import com.example.marcin.meetfriends.ui.login.LoginActivity
 import com.example.marcin.meetfriends.ui.login.LoginModule
 import com.example.marcin.meetfriends.ui.main.MainActivity
@@ -21,4 +23,8 @@ abstract class InjectorsModule {
   @ScreenScope
   @ContributesAndroidInjector(modules = arrayOf(MainModule::class))
   abstract fun mainActivity(): MainActivity
+
+  @ScreenScope
+  @ContributesAndroidInjector(modules = arrayOf(LaunchModule::class))
+  abstract fun launchActivity(): LaunchActivity
 }
